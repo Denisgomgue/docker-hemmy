@@ -1,0 +1,54 @@
+services:
+  # Backend - NestJS API
+  backend:
+    build:
+      context: ./grupo_hemmy_backend
+      dockerfile: Dockerfile
+    container_name: hemmy_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-3306}
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: unless-stopped
+    networks:
+      - hemmy_network
+    extra_hosts:
+      - "localhost:host-gateway"
+    volumes:
+      - ./grupo_hemmy_backend/uploads:/usr/src/app/uploads
+
+  # Frontend - Next.js
+  frontend:
+    build:
+      context: ./grupo_hemmy_frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
+    container_name: hemmy_frontend
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
+    restart: unless-stopped
+    networks:
+      - hemmy_network
+    depends_on:
+      - backend
+
+  # Nota: MySQL no está incluido porque usarás tu MySQL local
+  # El backend se conectará a través de localhost
+
+networks:
+  hemmy_network:
+    driver: bridge
+
